@@ -378,6 +378,8 @@ html, body { margin: 0; padding: 0; }
 
 body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background-color: #505050; color: #efefef; min-height: 100vh; display: flex; flex-direction: column; box-sizing: border-box; }
 
+.btn-xs { padding: 2px 5px !important; font-size: 0.7rem !important; }
+
 .navbar { padding: 5px 10px 8px 10px !important; }
 
 h3 { font-size: 1.68rem; }
@@ -515,11 +517,11 @@ h3 { font-size: 1.68rem; }
 
 .ITab .tab-acts .left > button:not(:last-child) { margin-right: 6px; }
 
-.ITab .tab-acts .left > button { margin-top: 20px; }
+.ITab .tab-acts .left hr { margin: 6px auto 6px auto; }
 
-.ITab .tab-acts .right { display: flex; }
+.ITab .tab-acts .right { display: flex; padding-right: 3px; }
 
-.ITab .tab-acts .right > div:not(:last-child) { margin: auto 6px auto auto; }
+.ITab .tab-acts .right > div { margin: auto 6px auto auto; }
 
 .ITab .tab-acts.floating { position: fixed; top: 0; left: 0; right: 0; z-index: 999; margin-bottom: 0; padding: 10px 15px 8px 15px; background: #2d4a69; backdrop-filter: blur(8px); border-bottom: 1px solid rgba(204, 204, 204, 0.3); box-shadow: 0 2px 20px 10px rgba(0, 0, 0, 0.5); transform: translateY(-100%); transition: transform 0.3s ease-in-out; }
 

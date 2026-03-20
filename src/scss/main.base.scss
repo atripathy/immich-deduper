@@ -16,6 +16,11 @@ body {
 	box-sizing: border-box;
 }
 
+.btn-xs {
+	padding: 2px 5px!important;
+	font-size: 0.70rem!important;
+}
+
 .navbar {
 	padding: 5px 10px 8px 10px !important;
 }
@@ -484,18 +489,20 @@ $spac: ($pad * 2) + ($gx * 2) + $sideW + 10px;
 				margin-right: 6px;
 			}
 
-			> button {
-				margin-top: 20px;
-				//padding:4px 13px 1px 4px;
-			}
+			hr { margin: 6px auto 6px auto }
+
+			// > button:nth-child(n+3) {
+			// 	margin-top: 2px;
+			// }
 		}
 
 		.right {
 			display: flex;
 
-			> div:not(:last-child) {
+			> div {
 				margin: auto 6px auto auto;
 			}
+			padding-right:3px;
 		}
 
 		padding-bottom: 5px;

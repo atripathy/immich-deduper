@@ -37,6 +37,8 @@ class SchemaInfo:
 	albumUser: str = 'album_user'
 	# asset_file features
 	assetFileHasEdited: bool = False
+	# asset table features
+	hasEncVidPath: bool = True
 	# Junction table column names
 	albumAssetAlbumId: str = 'albumId'
 	albumAssetAssetId: str = 'assetId'
@@ -98,6 +100,15 @@ def detectSchema():
 					AND column_name = 'isEdited'
 				"""))
 				schema.assetFileHasEdited = c.fetchone() is not None
+
+				# Detect asset.encodedVideoPath (removed in Immich v2.6+, moved to asset_file)
+				c.execute(Q(f"""
+					SELECT column_name FROM information_schema.columns
+					WHERE table_schema = 'public'
+					AND table_name = '{schema.asset}'
+					AND column_name = 'encodedVideoPath'
+				"""))
+				schema.hasEncVidPath = c.fetchone() is not None
 
 				# Detect junction table names (new: album_asset, old: albums_assets_assets)
 				c.execute("""
@@ -565,15 +576,25 @@ def fetchAssets(usr: models.Usr, onUpdate: models.IFnProg):
 				#----------------------------------------------------------------
 				onUpdate(42, "query livephoto videos...")
 
+				if sch.hasEncVidPath:
+					vidCol = 'v."encodedVideoPath" AS video_path,'
+					vidJoin1 = ""
+					vidJoin2 = ""
+				else:
+					vidCol = 'evf.path AS video_path,'
+					vidJoin1 = f'LEFT JOIN {sch.assetFile} evf ON evf."assetId" = v.id AND evf.type = \'encoded_video\''
+					vidJoin2 = f'LEFT JOIN {sch.assetFile} evf ON evf."assetId" = v.id AND evf.type = \'encoded_video\''
+
 				livePhotoQ = Q(f"""
 					-- Method 1: Direct livePhotoVideoId
 					SELECT
 						a.id AS photo_id,
 						a."livePhotoVideoId" AS video_id,
-						v."encodedVideoPath" AS video_path,
+						{vidCol}
 						v."originalPath" AS video_original_path
 					FROM {sch.asset} a
 					JOIN {sch.asset} v ON v.id = a."livePhotoVideoId" AND v.type = 'VIDEO'
+					{vidJoin1}
 					WHERE a."livePhotoVideoId" IS NOT NULL
 					AND a.type = 'IMAGE'
 					AND a.id = ANY(%s)
@@ -584,12 +605,13 @@ def fetchAssets(usr: models.Usr, onUpdate: models.IFnProg):
 					SELECT DISTINCT
 						a.id AS photo_id,
 						v.id AS video_id,
-						v."encodedVideoPath" AS video_path,
+						{vidCol}
 						v."originalPath" AS video_original_path
 					FROM {sch.asset} a
 					JOIN {sch.assetExif} ae ON a.id = ae."assetId"
 					JOIN {sch.assetExif} ve ON ae."livePhotoCID" = ve."livePhotoCID"
 					JOIN {sch.asset} v ON ve."assetId" = v.id
+					{vidJoin2}
 					WHERE ae."livePhotoCID" IS NOT NULL
 					AND a."livePhotoVideoId" IS NULL
 					AND a.type = 'IMAGE'

@@ -69,6 +69,7 @@ class k:
 	btnAllSelect = 'sim-btn-AllSelect'
 	btnAllCancel = 'sim-btn-AllCancel'
 	btnExportIds = 'sim-btn-ExportIds'
+	btnSelectMns = 'sim-btn-SelectMns'
 
 	btnFind = "sim-btn-fnd"
 	btnClear = "sim-btn-clear"
@@ -175,7 +176,9 @@ def layout(autoId=None):
 
 									dbc.Button([htm.Span(className="fake-checkbox checked"), "select All"], id=k.btnAllSelect, size="sm", color="secondary", disabled=True),
 									dbc.Button([htm.Span(className="fake-checkbox"),"Deselect All"], id=k.btnAllCancel, size="sm", color="secondary", disabled=True),
-									dbc.Button("Export IDs", id=k.btnExportIds, size="sm", color="info", disabled=True),
+									htm.Hr(),
+									dbc.Button([htm.Span(className="fake-checkbox"), "select Mains"], id=k.btnSelectMns, size="xs", color="secondary", disabled=True),
+									dbc.Button("Export IDs", id=k.btnExportIds, size="xs", color="info", disabled=True),
 
 								], className="left"),
 

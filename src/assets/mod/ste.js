@@ -86,12 +86,18 @@ const Ste = window.Ste = {
 		const btnRS = document.getElementById( 'sim-btn-OkSel' )
 		const btnAllSelect = document.getElementById( 'sim-btn-AllSelect' )
 		const btnAllCancel = document.getElementById( 'sim-btn-AllCancel' )
+		const btnSelMns = document.getElementById( 'sim-btn-SelectMns' )
 
 		if ( btnRm ) btnRm.textContent = `❌ Delete selected ( ${ cntSel } ) and ✅ Keep others( ${ cntDiff } )`
 		if ( btnRS ) btnRS.textContent = `✅ Keep selected ( ${ cntSel } ) and ❌ delete others( ${ cntDiff } )`
 
 		if ( btnAllSelect ) btnAllSelect.disabled = ( cntSel >= cntAll || cntAll == 0 )
 		if ( btnAllCancel ) btnAllCancel.disabled = ( cntSel == 0 )
+		if ( btnSelMns )
+		{
+			btnSelMns.disabled = ( cntAll == 0 )
+			this.updBtnMns()
+		}
 
 		console.log( `[Ste] updBtns - selected[ ${ cntSel } / ${ cntAll } ]` )
 	},
@@ -107,6 +113,44 @@ const Ste = window.Ste = {
 		this.updBtns()
 		console.log( `[Ste] Selected all ${ this.selectedIds.size } assets` )
 		dsh.syncSte( this.cntTotal, this.selectedIds )
+	},
+
+	getMainIds()
+	{
+		const cards = document.querySelectorAll( '.sim.main [id*="card-select"]' )
+		const ids = []
+		cards.forEach( card => {
+			const aid = this.extractAssetIdBy( card )
+			if ( aid ) ids.push( aid )
+		} )
+		return ids
+	},
+
+	isAllMainsSel()
+	{
+		const ids = this.getMainIds()
+		return ids.length > 0 && ids.every( aid => this.selectedIds.has( aid ) )
+	},
+
+	async toggleMains()
+	{
+		const ids = this.getMainIds()
+		const allSel = this.isAllMainsSel()
+		ids.forEach( aid => { allSel ? this.selectedIds.delete( aid ) : this.selectedIds.add( aid ) } )
+		await this.updAllCss()
+		this.updBtns()
+		console.log( `[Ste] ${ allSel ? 'Deselected' : 'Selected' } ${ ids.length } main assets` )
+		dsh.syncSte( this.cntTotal, this.selectedIds )
+	},
+
+	updBtnMns()
+	{
+		const btn = document.getElementById( 'sim-btn-SelectMns' )
+		if ( !btn ) return
+		const allSel = this.isAllMainsSel()
+		const fcbx = btn.querySelector( '.fake-checkbox' )
+		if ( fcbx ) fcbx.classList[ allSel ? 'add' : 'remove' ]( 'checked' )
+		btn.childNodes.forEach( n => { if ( n.nodeType === 3 ) n.textContent = allSel ? 'deselect Mains' : 'select Mains' } )
 	},
 
 	async clearAll()
@@ -256,6 +300,11 @@ document.addEventListener( 'DOMContentLoaded', function(){
 		{
 			event.preventDefault()
 			if ( ste ) ste.clearAll()
+		}
+		if ( event.target.id == 'sim-btn-SelectMns' )
+		{
+			event.preventDefault()
+			if ( ste ) ste.toggleMains()
 		}
 		if ( event.target.id == 'sim-btn-ExportIds' || event.target.id == 'view-btn-ExportIds' )
 		{

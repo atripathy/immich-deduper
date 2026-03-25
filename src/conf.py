@@ -253,6 +253,7 @@ class envs:
 	immichPath:str = '/immich' if isDock else envImmichPath
 	immichThumb:str = '/thumbs' if isDock and envImmichThumb else envImmichThumb
 	qdrantUrl:str = os.getenv('QDRANT_URL') or ('http://immich-deduper-qdrant:6333' if isDock else '')
+	qdrantColl:str = os.getenv('QDRANT_COLL', 'deduper')
 	psqlHost:str = os.getenv('PSQL_HOST','')
 	psqlPort:str = os.getenv('PSQL_PORT','')
 	psqlDb:str = os.getenv('PSQL_DB','')
@@ -286,6 +287,7 @@ class envs:
 			lg.info(f"  IMMICH_PATH: {envs.immichPath}")
 			lg.info(f"  IMMICH_THUMB: {envs.immichThumb or '(not set)'}")
 		lg.info(f"  QDRANT_URL: {envs.qdrantUrl}")
+		lg.info(f"  QDRANT_COLL: {envs.qdrantColl}")
 		lg.info(f"  DEDUP_PORT: {envs.ddupPort}")
 		lg.info(f"  DEDUP_DATA: {envs.ddupData}")
 		lg.info(f"  IS_DOCKER: {envs.isDock}")

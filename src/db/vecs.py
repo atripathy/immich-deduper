@@ -13,7 +13,7 @@ from util.err import mkErr
 
 lg = log.get(__name__)
 
-keyColl = "deduper"
+keyColl = envs.qdrantColl
 
 conn: Optional[QdrantClient] = None
 

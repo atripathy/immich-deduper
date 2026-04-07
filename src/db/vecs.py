@@ -127,7 +127,7 @@ def save(aid: int, vector: np.ndarray, confirm=True):
 	except Exception as e: raise mkErr(f"Error saving vector for asset {aid}", e)
 
 
-def getBy(aid: int) -> List[float]:
+def getVec(aid: int) -> List[float]:
 	try:
 		if conn is None: raise RuntimeError("[vecs] Qdrant connection not initialized")
 
@@ -141,18 +141,17 @@ def getBy(aid: int) -> List[float]:
 
 		if not hasattr(dst[0], 'vector') or dst[0].vector is None: raise RuntimeError(f"[vecs] Vector for asset aid[{aid}] is empty")
 
-		vector = dst[0].vector
+		vec = dst[0].vector
 
 		# lg.info(f"Original vector data type: {type(vector)}")
 
-		if isinstance(vector, np.ndarray): raise RuntimeError(f"[vecs] Vector is a NumPy array, converting to list")
-		if hasattr(vector, 'tolist') and callable(getattr(vector, 'tolist')): raise RuntimeError(f"[vecs] Vector has tolist method, attempting conversion")
+		if isinstance(vec, np.ndarray): raise RuntimeError(f"[vecs] Vector is a NumPy array, converting to list")
+		if hasattr(vec, 'tolist') and callable(getattr(vec, 'tolist')): raise RuntimeError(f"[vecs] Vector has tolist method, attempting conversion")
 
-		if not hasattr(vector, '__len__') or len(vector) == 0: raise RuntimeError(f"[vecs] Vector format for asset aid[{aid}] is incorrect: {type(vector)}")
+		if not hasattr(vec, '__len__') or len(vec) == 0: raise RuntimeError(f"[vecs] Vector format for asset aid[{aid}] is incorrect: {type(vec)}")
+		if not isinstance(vec, list): raise RuntimeError(f"[vecs] Vector not a list: {type(vec)}")
 
-		if not isinstance(vector, list): raise RuntimeError(f"[vecs] Vector not a list: {type(vector)}")
-
-		return vector #type:ignore
+		return vec #type:ignore
 	except Exception as e: raise mkErr(f"[vecs] Error get asset vector aid[{aid}]", e)
 
 
@@ -197,15 +196,15 @@ def search(vec, thMin: float=0.95, limit=100) -> list[qdrant_client.http.models.
 
 
 #------------------------------------------------------------------------
-# only return different id
+# always inclaude self
 #------------------------------------------------------------------------
 def findSimiliar(aid: int, thMin: float=0.95, limit=100, logRow=False) -> Tuple[list[float], list[models.SimInfo]]:
 	try:
 		if conn is None: raise RuntimeError("Qdrant connection not initialized")
 
-		vector = getBy(aid)
+		vec = getVec(aid)
 
-		rep = conn.query_points(collection_name=keyColl, query=vector, limit=limit, score_threshold=thMin, with_payload=True)
+		rep = conn.query_points(collection_name=keyColl, query=vec, limit=limit, score_threshold=thMin, with_payload=True)
 		rst = rep.points
 		infos: list[models.SimInfo] = []
 
@@ -218,5 +217,9 @@ def findSimiliar(aid: int, thMin: float=0.95, limit=100, logRow=False) -> Tuple[
 				isSelf = hit_aid == aid
 				infos.append(models.SimInfo(hit_aid, hit.score, isSelf))
 
-		return vector, infos
+		if infos and not any(i.isSelf for i in infos):
+			lg.warn(f"[vecs:find] #{aid} self not in results({len(infos)}), injecting")
+			infos.insert(0, models.SimInfo(aid, 1.0, True))
+
+		return vec, infos
 	except Exception as e: raise mkErr(f"Error finding similar assets for aid[{aid}]", e)

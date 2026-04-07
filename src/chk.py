@@ -67,8 +67,8 @@ def testVec() -> tuple[bool, list[str]]:
 		try:
 			db.vecs.save(tid, tvec, confirm=False)
 
-			stored = db.vecs.getBy(tid)
-			if not stored: return False, ['Vector retrieval failed after save']
+			vec = db.vecs.getVec(tid)
+			if not vec: return False, ['Vector retrieval failed after save']
 
 			db.vecs.deleteBy([tid])
 		except Exception as e:

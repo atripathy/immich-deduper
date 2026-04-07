@@ -169,22 +169,22 @@ def searchBy(src: models.Asset, doRep: IFnProg, isCancel: IFnCancel, fromUrl: bo
 	return gis
 
 
-def findGroupBy(asset: models.Asset, doReport: IFnProg, grpId: int, fromUrl=False, ls: Optional[LogStep]=None) -> SearchInfo:
-	result = SearchInfo()
-	result.asset = asset
+def findGroupBy(ast: models.Asset, doReport: IFnProg, grpId: int, fromUrl=False, ls: Optional[LogStep]=None) -> SearchInfo:
+	rst = SearchInfo()
+	rst.asset = ast
 	thMin = db.dto.thMin
 
-	bseVec, bseInfos = db.vecs.findSimiliar(asset.autoId, thMin)
-	if ls: ls.mark("vecs", str(len(bseInfos)))
-	result.bseVec = bseVec
-	result.bseInfos = bseInfos
+	vec, sinfo = db.vecs.findSimiliar(ast.autoId, thMin)
+	if ls: ls.mark("vecs", str(len(sinfo)))
+	rst.bseVec = vec
+	rst.bseInfos = sinfo
 
-	if not bseInfos:
+	if not sinfo:
 		if ls: ls.setResult("noVector")
-		db.pics.setVectoredBy(asset, 0)
-		return result
+		db.pics.setVectoredBy(ast, 0)
+		return rst
 
-	simAids = [i.aid for i in bseInfos if not i.isSelf]
+	simAids = [i.aid for i in sinfo if not i.isSelf]
 
 	if db.dto.excl.on and db.dto.excl.filNam:
 		filteredAids = []
@@ -194,68 +194,68 @@ def findGroupBy(asset: models.Asset, doReport: IFnProg, grpId: int, fromUrl=Fals
 		simAids = filteredAids
 		if ls: ls.mark("extFil", str(len(simAids)))
 
-	result.simAids = simAids
+	rst.simAids = simAids
 
 	if not simAids:
 		if ls: ls.setResult("noFound")
-		db.pics.setSimInfos(asset.autoId, bseInfos, isOk=1)
-		return result
+		db.pics.setSimInfos(ast.autoId, sinfo, isOk=1)
+		return rst
 
-	assets = [asset] + [db.pics.getByAutoId(aid) for aid in simAids if db.pics.getByAutoId(aid)]
+	assets = [ast] + [db.pics.getByAutoId(aid) for aid in simAids if db.pics.getByAutoId(aid)]
 	condOk, condReason = checkGroupConds(assets)
 	if not condOk:
 		if ls: ls.setResult(f"cond({condReason})")
-		db.pics.setSimInfos(asset.autoId, bseInfos, isOk=1)
-		return result
+		db.pics.setSimInfos(ast.autoId, sinfo, isOk=1)
+		return rst
 
 	if db.dto.excl.on and db.dto.excl.fndLes > 0:
 		if len(simAids) < db.dto.excl.fndLes:
 			if ls: ls.setResult(f"excl(sim:{len(simAids)}<{db.dto.excl.fndLes})")
-			db.pics.setSimInfos(asset.autoId, bseInfos, isOk=1)
-			return result
+			db.pics.setSimInfos(ast.autoId, sinfo, isOk=1)
+			return rst
 
 	if db.dto.excl.on and db.dto.excl.fndOvr > 0:
 		if len(simAids) > db.dto.excl.fndOvr:
 			if ls: ls.setResult(f"excl(sim:{len(simAids)}>{db.dto.excl.fndOvr})")
-			db.pics.setSimInfos(asset.autoId, bseInfos, isOk=1)
-			return result
+			db.pics.setSimInfos(ast.autoId, sinfo, isOk=1)
+			return rst
 
-	rootGID = asset.autoId
-	db.pics.setSimGIDs(asset.autoId, rootGID)
-	db.pics.setSimInfos(asset.autoId, bseInfos)
+	rootGID = ast.autoId
+	db.pics.setSimGIDs(ast.autoId, rootGID)
+	db.pics.setSimInfos(ast.autoId, sinfo)
 	if ls: ls.mark("setGID")
 
-	processChildren(asset, bseInfos, simAids, doReport)
+	processChildren(ast, sinfo, simAids, doReport)
 	if ls: ls.mark("children")
 
 	if not fromUrl and db.dto.muod.on:
-		assets = db.pics.getSimAssets(asset.autoId, False)
+		assets = db.pics.getSimAssets(ast.autoId, False)
 		for i, ass in enumerate(assets):
 			ass.vw.muodId = grpId
 			ass.vw.isMain = (i == 0)
-		result.assets = assets
-	else: result.assets = db.pics.getSimAssets(asset.autoId, db.dto.rtree)
+		rst.assets = assets
+	else: rst.assets = db.pics.getSimAssets(ast.autoId, db.dto.rtree)
 
-	if db.dto.pathFilter and result.assets:
-		hasMatch = any(db.dto.pathFilter in (a.originalPath or '') for a in result.assets)
+	if db.dto.pathFilter and rst.assets:
+		hasMatch = any(db.dto.pathFilter in (a.originalPath or '') for a in rst.assets)
 		if not hasMatch:
 			if ls: ls.setResult(f"pathFil({db.dto.pathFilter})")
-			db.pics.setSimInfos(asset.autoId, bseInfos, isOk=1)
-			result.assets = []
+			db.pics.setSimInfos(ast.autoId, sinfo, isOk=1)
+			rst.assets = []
 
-	return result
+	return rst
 
 
-def processChildren(asset: models.Asset, bseInfos: List[models.SimInfo], simAids: List[int], doReport: IFnProg) -> Set[int]:
+def processChildren(ast: models.Asset, infos: List[models.SimInfo], simAids: List[int], doReport: IFnProg) -> Set[int]:
 	thMin = db.dto.thMin
 	maxItems = db.dto.rtreeMax
 
 
-	rootGID = asset.autoId
-	db.pics.setSimGIDs(asset.autoId, rootGID)
-	db.pics.setSimInfos(asset.autoId, bseInfos)
+	rootGID = ast.autoId
+	db.pics.setSimGIDs(ast.autoId, rootGID)
+	db.pics.setSimInfos(ast.autoId, infos)
 
-	doneIds = {asset.autoId}
+	doneIds = {ast.autoId}
 	simQ = [(aid, 0) for aid in simAids]
 
 	while simQ:

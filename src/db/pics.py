@@ -971,7 +971,7 @@ def getSimAssets(autoId: int, incGroup=False) -> List[models.Asset]:
 					assets.append(ass)
 
 				try:
-					rootVec = vecs.getBy(root.autoId)
+					rootVec = vecs.getVec(root.autoId)
 					rootVecNp = np.array(rootVec)
 
 					rootSimAids = {info.aid for info in root.simInfos}

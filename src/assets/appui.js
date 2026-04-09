@@ -81,17 +81,51 @@ const ui = window.ui = {
 
 	poptip: {
 		baseZIndex: 1000,
+		_hideTimer: null,
+		_activeTipId: null,
+
+		delayHide(tipId, delay = 3000){
+			clearTimeout(this._hideTimer)
+			this._hideTimer = setTimeout(() =>{
+				const tipEl = document.getElementById(tipId)
+				this.hide(tipEl)
+				this._activeTipId = null
+			}, delay)
+		},
+
+		cancelHide(){
+			clearTimeout(this._hideTimer)
+		},
+
+		hide(tipEl){
+			if (!tipEl) return
+			tipEl.style.transition = 'opacity 0.3s ease'
+			tipEl.style.opacity = '0'
+			setTimeout(() =>{
+				tipEl.style.display = 'none'
+				tipEl.style.opacity = '1'
+				tipEl.style.transition = ''
+				const arrow = tipEl.querySelector('.poptip-arrow')
+				if (arrow) arrow.remove()
+			}, 300)
+		},
 
 		show(tipId, triggerEl, forceToggle = false){
 			const tipEl = document.getElementById(tipId)
 			if (!tipEl) return
 
+			this.cancelHide()
+
+			if (this._activeTipId && this._activeTipId !== tipId) {
+				const prevTip = document.getElementById(this._activeTipId)
+				this.hide(prevTip)
+			}
+			this._activeTipId = tipId
 
 			const isVisible = tipEl.style.display === 'block'
 			if (forceToggle && isVisible) {
-				tipEl.style.display = 'none'
-				const arrow = tipEl.querySelector('.poptip-arrow')
-				if (arrow) arrow.remove()
+				this.hide(tipEl)
+				this._activeTipId = null
 				return
 			}
 
@@ -127,12 +161,13 @@ const ui = window.ui = {
 			})
 
 			if (!tipEl._mouseLeaveEventsBound) {
-				tipEl._mouseLeaveHandler = () =>{
-					tipEl.style.display = 'none'
-					const arrow = tipEl.querySelector('.poptip-arrow')
-					if (arrow) arrow.remove()
-				}
-				tipEl.addEventListener('mouseleave', tipEl._mouseLeaveHandler)
+				tipEl.addEventListener('mouseenter', () =>{
+					this.cancelHide()
+				})
+				tipEl.addEventListener('mouseleave', () =>{
+					this.hide(tipEl)
+					this._activeTipId = null
+				})
 				tipEl._mouseLeaveEventsBound = true
 			}
 		},
@@ -205,8 +240,13 @@ document.addEventListener('DOMContentLoaded', () =>{
 			if (span.hasAttribute('data-tip-id')) {
 				span.addEventListener('mouseenter', function(){
 					const tipId = this.getAttribute('data-tip-id')
+					ui.poptip.cancelHide()
 					ui.poptip.show(tipId, this)
 					this.style.cursor = 'pointer'
+				})
+				span.addEventListener('mouseleave', function(){
+					const tipId = this.getAttribute('data-tip-id')
+					ui.poptip.delayHide(tipId)
 				})
 			}
 			else {

@@ -35,7 +35,7 @@ def mk(ass: models.Asset, modSim=True):
 	if isMain: css += " main"
 	if isRels: css += " rels"
 
-	tipExif = gvEx.mkTipExif(ass.id, ass.jsonExif)
+	tipExif = gvEx.mkTipExif(ass.autoId, ass.jsonExif)
 
 	imgPopId = {"type": "img-pop-multi", "aid": ass.autoId} if modSim else {"type": "img-pop", "aid": ass.autoId}
 
@@ -69,7 +69,32 @@ def mk(ass: models.Asset, modSim=True):
 				])
 			], className="poptip", id=f'facs-{ass.autoId}') if ex and ex.facs else None,
 
-		], style={'display': 'absolute'}),
+			htm.Div([
+				htm.P(ex.description, className="desc-content")
+			], className="poptip", id=f'desc-{ass.autoId}') if ex and ex.description else None,
+
+			htm.Div([
+				htm.Div([
+					htm.Span(f"{ex.city}, ") if ex.city else None,
+					htm.Span(f"{ex.state}, ") if ex.state else None,
+					htm.Span(f"{ex.country}") if ex.country else None,
+					htm.Br(),
+					htm.Span(f"{ex.latitude:.6f}, {ex.longitude:.6f}"),
+				], className="loc-content")
+			], className="poptip", id=f'loc-{ass.autoId}') if ex and ex.latitude is not None and ex.longitude is not None else None,
+
+			htm.Div([
+				htm.Div([
+					htm.Img(
+						src=f"/api/img/id/{mid}",
+						style={"width": "64px", "height": "64px", "objectFit": "cover", "borderRadius": "4px"}
+					) for mid in ex.stackAssets
+				], style={"display": "flex", "flexWrap": "wrap", "gap": "4px", "maxWidth": "280px"})
+			], className="poptip", id=f'stack-{ass.autoId}') if ex and ex.stackAssets else None,
+
+			tipExif,
+
+		]),
 		#------------------------------------------------------------------------
 		dbc.Card([
 			dbc.CardHeader(
@@ -157,63 +182,23 @@ def mk(ass: models.Asset, modSim=True):
 
 				], class_name="grid grid-info"),
 				htm.Div([
-					tipExif,
 
 					htm.Span('✅ resolved', className='tag') if ass.simOk else None,
 					htm.Span('❤️', className='tag') if ass.isFavorite else None,
 					htm.Span(f'⭐{ex.rating}', className='tag yellow') if ex and ex.rating and ex.rating > 0 else None,
 					htm.Span(ex.visibility, className='tag info') if ex and ex.visibility and ex.visibility != 'timeline' else None,
 
-					htm.Span("exif", className='tag blue', id={'type': 'exif-badge', 'index': ass.id}) if ass.jsonExif else None,
+					htm.Span("exif", className='tag blue', **{'data-tip-id': f'exif-{ass.autoId}'}) if ass.jsonExif else None, #type: ignore
 					htm.Span("external", className='tag yellow') if ass.libId else None,
 
-					htm.Span('desc', className='tag second', id={'type': 'desc-badge', 'index': ass.id}) if ex and ex.description else None,
-					dbc.Popover(
-						dbc.PopoverBody(
-							htm.P(ex.description, style={"maxWidth": "300px", "whiteSpace": "pre-wrap", "wordBreak": "break-word", "margin": "0"}),
-							style={"padding": "8px"}
-						),
-						target={'type': 'desc-badge', 'index': ass.id},
-						trigger="hover focus",
-						placement="auto",
-					) if ex and ex.description else None,
+					htm.Span('desc', className='tag second', **{'data-tip-id': f'desc-{ass.autoId}'}) if ex and ex.description else None, #type: ignore
 
-					htm.Span('location', className='tag green', id={'type': 'loc-badge', 'index': ass.id}) if ex and ex.latitude is not None and ex.longitude is not None else None,
-					dbc.Popover(
-						dbc.PopoverBody(
-							htm.Table(htm.Tbody([
-								htm.Tr([htm.Td("City"), htm.Td(ex.city)]) if ex.city else None,
-								htm.Tr([htm.Td("State"), htm.Td(ex.state)]) if ex.state else None,
-								htm.Tr([htm.Td("Country"), htm.Td(ex.country)]) if ex.country else None,
-								htm.Tr([htm.Td("Latitude"), htm.Td(f'{ex.latitude:.6f}')]),
-								htm.Tr([htm.Td("Longitude"), htm.Td(f'{ex.longitude:.6f}')]),
-							]), className="table-sm table-striped", style={"backgroundColor": "white", "color": "black", "width": "100%", "borderRadius": "4px"}),
-							style={"padding": "8px"}
-						),
-						target={'type': 'loc-badge', 'index': ass.id},
-						trigger="hover focus",
-						placement="auto",
-					) if ex and ex.latitude is not None and ex.longitude is not None else None,
-
+					htm.Span('location', className='tag green', **{'data-tip-id': f'loc-{ass.autoId}'}) if ex and ex.latitude is not None and ex.longitude is not None else None, #type: ignore
 
 					htm.Span([
 						htm.Span(className='ico stack'),
 						f'{len(ex.stackAssets)}',
-					], className='tag second', id={'type': 'stack-badge', 'index': ass.id}) if ex and ex.stackAssets else None,
-					dbc.Popover(
-						dbc.PopoverBody(
-							htm.Div([
-								htm.Img(
-									src=f"/api/img/id/{mid}",
-									style={"width": "64px", "height": "64px", "objectFit": "cover", "borderRadius": "4px"}
-								) for mid in ex.stackAssets
-							], style={"display": "flex", "flexWrap": "wrap", "gap": "4px", "maxWidth": "280px"}),
-							style={"padding": "8px"}
-						),
-						target={'type': 'stack-badge', 'index': ass.id},
-						trigger="hover focus",
-						placement="auto",
-					) if ex and ex.stackAssets else None,
+					], className='tag second', **{'data-tip-id': f'stack-{ass.autoId}'}) if ex and ex.stackAssets else None, #type: ignore
 
 					# htm.Span([
 					#     htm.I(className='bi bi-person-bounding-box'),

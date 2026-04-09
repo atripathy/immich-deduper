@@ -1,6 +1,5 @@
 from typing import Optional
 import dash.html as htm
-import dash_bootstrap_components as dbc
 from util import log
 from conf import ks, co
 from mod import models
@@ -50,14 +49,14 @@ def mkExifGrid(dicExif:dict):
 	return table
 
 
-def mkTipExif(assId, dicExif: Optional[models.AssetExif]):
+def mkTipExif(autoId, dicExif: Optional[models.AssetExif]):
 	if not dicExif: return None
 
 	table = mkExifGrid(dicExif.toDict())
 
 	if len(table) > 0:
-		return dbc.Popover(
-			dbc.PopoverBody(
+		return htm.Div([
+			htm.Div([
 				htm.Table(
 					htm.Tbody(table),
 					className="table-sm table-striped",
@@ -68,12 +67,7 @@ def mkTipExif(assId, dicExif: Optional[models.AssetExif]):
 						"borderRadius": "4px"
 					}
 				),
-				style={"maxWidth": "400px", "maxHeight": "400px", "overflow": "auto", "padding": "8px"}
-			),
-			target={"type": "exif-badge", "index": assId},
-			trigger="hover focus",
-			placement="auto",
-			className="popover-exif-info",
-		)
+			], style={"maxWidth": "400px", "maxHeight": "400px", "overflow": "auto"})
+		], className="poptip", id=f'exif-{autoId}')
 
 	return None

@@ -278,42 +278,6 @@
 	}
 }
 
-/* Exif info popover styling */
-.popover.popover-exif-info {
-	background-color: #fff !important;
-	backdrop-filter: blur(5px) !important;
-	border: none !important;
-	padding: 6px !important;
-	max-width: 450px !important;
-
-	.popover-body {
-		padding: 0 !important;
-		background-color: #2d2d2d !important;
-		border-radius: 4px;
-
-        table {
-          background: #EfEfEf !important;
-		  border-radius: 6px;
-          border: #666 1px dotted;
-        }
-	}
-
-	.popover-arrow::after {
-		border-top-color: #fff !important;
-	}
-}
-
-.exif-badge {
-	cursor: pointer !important;
-	transition: all 0.2s ease-in-out !important;
-
-	&:hover {
-		transform: scale(1.1) !important;
-		box-shadow: 0 0 5px rgba(87, 195, 238, 0.7) !important;
-	}
-}
-
-
 .popover {
 	background-color: #2d2d2d !important;
 	border-color: var(--bs-border-color) !important;

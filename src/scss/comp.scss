@@ -20,14 +20,10 @@
 			box-shadow: 0 0 3px #6daa2b;
 		}
 
-		&:has(.ausl-log-btn) .ausl-log-btn { margin: auto 10px; }
-		&:not(:has(.ausl-log-btn)) button:first-of-type { margin-left: 12px; }
+		&:has(.ausl-log-tag) .ausl-log-tag { margin: auto 10px; }
+		&:not(:has(.ausl-log-tag)) button:first-of-type { margin-left: 12px; }
 	}
 }
-
-/*======================== result ========================*/
-
-
 
 /*======================== task ========================*/
 .tskPanel {
@@ -162,70 +158,34 @@
 }
 
 /*======================== Auto-Select Log Button ========================*/
-.ausl-log-btn {
+.ausl-log-tag {
 	padding: 2px 6px;
 	border-radius: 4px;
 	border: none;
 	cursor: pointer;
 	font-size: 11px;
-	background: #4595ae!important;
+	background: #4595ae;
 	color: white;
 	opacity: 0.8;
 	&:hover { opacity: 1; }
 }
 
-/*======================== Auto-Select Log Modal ========================*/
-.ausl-log {
-	$rad: 12px;
+.ausl-log-poptip > div {
+	min-width: 320px;
+	max-height: 500px;
+	overflow: auto;
+}
 
-	&-modal {
-		position: fixed;
-		top: 0; left: 0;
-		width: 100%; height: 100%;
-		background: rgba(0,0,0,0.6);
-		z-index: 9999;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-	&-content {
-		border-radius: $rad;
-		box-shadow: 0 0 12px 5px rgba(255, 255, 255, 0.3);
-		background-color: #3a3a3a;
-		border: 1px solid #5db1ff99;
-		min-width: 400px;
-		max-width: 600px;
-		max-height: 80vh;
-		overflow: auto;
-	}
-	&-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 12px 16px;
-		background-color: #212121;
-		border-bottom: 1px solid #333333;
-		border-top-left-radius: $rad;
-		border-top-right-radius: $rad;
-		font-weight: bold;
-		color: #e0e0e0;
-	}
-	&-close {
-		background: none;
-		border: none;
-		color: #999;
-		font-size: 20px;
-		cursor: pointer;
-		&:hover { color: #fff; }
-	}
-	&-body { padding: 16px; color: #e0e0e0; }
-	&-reason { color: #aaa; margin-bottom: 12px; font-size: 13px; }
+.ausl-log {
+	&-wrap { color: #e0e0e0; font-size: 14px; }
+	&-title { font-weight: bold; font-size: 16px; color: #78c229; margin-bottom: 8px; }
+	&-reason { color: #ccc; margin-bottom: 12px; font-size: 15px; line-height: 1.5; }
 	&-table {
 		width: 100%;
 		border-collapse: collapse;
-		font-size: 12px;
-		th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #333; }
-		th { background: #212121; color: #888; }
+		font-size: 14px;
+		th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid #444; }
+		th { background: #212121; color: #aaa; font-size: 13px; }
 		tr.winner {
 			background: rgba(120, 194, 41, 0.15);
 			td:first-child { font-weight: bold; color: #78c229; }

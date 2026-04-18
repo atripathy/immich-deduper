@@ -183,14 +183,23 @@ function _selectBestAsset(grpAssets, ausl){
 	const topScorers = scores.filter(s => s.scr === maxScr)
 
 	if (topScorers.length > 1) {
+		if (ausl.kpEmpty) {
+			const tiedAids = topScorers.map(s => s.aid)
+			console.log(`[ausl] Tie kept: ${topScorers.length} assets at score ${maxScr}, keeping all [${tiedAids.join(', ')}]`)
+			for (const s of topScorers){
+				if (!s.reasons.includes('Tie')) s.reasons.push('Tie')
+				if (allScores[s.aid]) allScores[s.aid].reasons = s.reasons
+			}
+			return {aids: tiedAids, score: maxScr, reasons: ['Tie'], allScores, tied: true}
+		}
 		console.log(`[ausl] No winner: ${topScorers.length} assets tied at score ${maxScr}`)
-		return {aid: null, score: maxScr, reasons: [], allScores}
+		return {aids: [], score: maxScr, reasons: [], allScores}
 	}
 
 	const winner = topScorers[0]
 	console.log(`[ausl] Winner: #${winner.aid} score[${winner.scr}] (${winner.reasons.join(', ')})`)
 
-	return {aid: winner.aid, score: winner.scr, reasons: winner.reasons, allScores}
+	return {aids: [winner.aid], score: winner.scr, reasons: winner.reasons, allScores}
 }
 
 window.auslLogs = {}
@@ -271,7 +280,7 @@ function waitForCardsAndUpdate(ids){
 
 function getAutoSelectAuids(assets, ausl){
 	console.log(`[ausl] Starting auto-selection, ausl.on[${ausl?.on}], assets count=${assets?.length || 0}`)
-	console.log(`[ausl] Weights: Earlier[${ausl?.earlier}] Later[${ausl?.later}] ExifRich[${ausl?.exRich}] ExifPoor[${ausl?.exPoor}] BigSize[${ausl?.ofsBig}] SmallSize[${ausl?.ofsSml}] BigDim[${ausl?.dimBig}] SmallDim[${ausl?.dimSml}] SkipLow[${ausl?.skipLow}] AllLive[${ausl?.allLive}] JPG[${ausl?.typJpg}] PNG[${ausl?.typPng}] HEIC[${ausl?.typHeic}] Fav[${ausl?.fav}] InAlb[${ausl?.inAlb}] User[${ausl?.usr?.k}:${ausl?.usr?.v}] Path[${ausl?.pth?.k}:${ausl?.pth?.v}]`)
+	console.log(`[ausl] Weights: Earlier[${ausl?.earlier}] Later[${ausl?.later}] ExifRich[${ausl?.exRich}] ExifPoor[${ausl?.exPoor}] BigSize[${ausl?.ofsBig}] SmallSize[${ausl?.ofsSml}] BigDim[${ausl?.dimBig}] SmallDim[${ausl?.dimSml}] SkipLow[${ausl?.skipLow}] AllLive[${ausl?.allLive}] KpEmpty[${ausl?.kpEmpty}] JPG[${ausl?.typJpg}] PNG[${ausl?.typPng}] HEIC[${ausl?.typHeic}] Fav[${ausl?.fav}] InAlb[${ausl?.inAlb}] User[${ausl?.usr?.k}:${ausl?.usr?.v}] Path[${ausl?.pth?.k}:${ausl?.pth?.v}]`)
 
 	window.auslReasons = {}
 	window.auslLogs = {}
@@ -305,17 +314,34 @@ function getAutoSelectAuids(assets, ausl){
 		const skipResult = _shouldSkipLowSim(grpAss, ausl)
 		if (skipResult.skip) {
 			const lowList = skipResult.lowScoreAssets.map(a => `#${a.aid}(${a.score.toFixed(4)})`).join(', ')
+			const details = grpAss.map(ass =>{
+				const scr = ass.vw?.score
+				if (!scr) return {aid: ass.autoId, score: '-', reasons: ['Main']}
+				const isLow = scr <= 0.96
+				return {aid: ass.autoId, score: scr, reasons: [isLow ? 'Low similarity' : 'High similarity']}
+			})
+			if (ausl.kpEmpty) {
+				const keepAids = grpAss.map(a => a.autoId)
+				console.log(`[ausl] Group ${gid}: Low sim kept (${lowList}), keeping all [${keepAids.join(', ')}]`)
+				selIds.push(...keepAids)
+				for (const aid of keepAids) window.auslReasons[aid] = ['LowSimKept']
+				window.auslLogs[gid] = {status: 'low_sim_kept', selectedAids: keepAids, reason: `Selected all ${keepAids.length} (low similarity, disable "Keep all when auto-select empty" to skip this group)`, details}
+				continue
+			}
 			console.log(`[ausl] Group ${gid}: SKIPPING due to low similarity: ${lowList}`)
-			window.auslLogs[gid] = {status: 'skipped', selectedAids: [], reason: `Skipped: low similarity (<0.96)`, details: skipResult.lowScoreAssets.map(a => ({aid: a.aid, score: a.score, reasons: ['Low similarity']}))}
+			window.auslLogs[gid] = {status: 'skipped', selectedAids: [], reason: `Skipped: low similarity (<0.96)`, details}
 			continue
 		}
 
 		const result = _selectBestAsset(grpAss, ausl)
-		if (result?.aid) {
-			selIds.push(result.aid)
-			window.auslReasons[result.aid] = result.reasons
-			window.auslLogs[gid] = {status: 'selected', selectedAids: [result.aid], reason: `Selected #${result.aid} (score: ${result.score})`, details: Object.entries(result.allScores).map(([aid, d]) => ({aid: parseInt(aid), score: d.score, reasons: d.reasons}))}
-			console.log(`[ausl] Group ${gid}: Selected best asset #${result.aid}`)
+		if (result?.aids?.length) {
+			selIds.push(...result.aids)
+			for (const aid of result.aids){
+				window.auslReasons[aid] = result.allScores[aid]?.reasons || result.reasons
+			}
+			const reasonText = result.tied ? `Selected all ${result.aids.length} (tied at score ${result.score}, disable "Keep all when auto-select empty" to leave empty)` : `Selected #${result.aids[0]} (score: ${result.score})`
+			window.auslLogs[gid] = {status: result.tied ? 'tied_kept' : 'selected', selectedAids: result.aids, reason: reasonText, details: Object.entries(result.allScores).map(([aid, d]) => ({aid: parseInt(aid), score: d.score, reasons: d.reasons}))}
+			console.log(`[ausl] Group ${gid}: ${reasonText}`)
 		} else {
 			window.auslLogs[gid] = {status: 'no_winner', selectedAids: [], reason: result?.score > 0 ? `No winner: tied at score ${result.score}` : 'No winner: all scores are 0', details: result?.allScores ? Object.entries(result.allScores).map(([aid, d]) => ({aid: parseInt(aid), score: d.score, reasons: d.reasons})) : []}
 		}
@@ -371,7 +397,8 @@ async function updAuslTips(){
 // Auto-Select Group Log Buttons
 //========================================================================
 function updAuslLog(){
-	document.querySelectorAll('.ausl-log-btn').forEach(el => el.remove())
+	document.querySelectorAll('.ausl-log-tag').forEach(el => el.remove())
+	document.querySelectorAll('.ausl-log-poptip').forEach(el => el.remove())
 
 	const logs = window.auslLogs || {}
 	if (!Object.keys(logs).length){
@@ -392,52 +419,33 @@ function updAuslLog(){
 			const log = logs[gid]
 			if (!log) return
 
-			const btn = document.createElement('button')
-			btn.className = 'ausl-log-btn btn btn-sm'
-			btn.setAttribute('data-gid', gid)
-			btn.textContent = 'auto select log'
-			btn.onclick = () => showAutoSelectLogModal(gid)
-			label.after(btn)
+			const tipId = `ausl-log-${gid}`
+
+			const tag = document.createElement('span')
+			tag.className = 'ausl-log-tag'
+			tag.setAttribute('data-tip-id', tipId)
+			tag.textContent = 'auto select log'
+			label.after(tag)
+
+			let detailsHtml = ''
+			if (log.details?.length) {
+				detailsHtml = '<table class="ausl-log-table"><thead><tr><th>#ID</th><th>Score</th><th>Reasons</th></tr></thead><tbody>'
+				for (const d of log.details){
+					const isWinner = log.selectedAids?.includes(d.aid)
+					detailsHtml += `<tr class="${isWinner ? 'winner' : ''}"><td>#${d.aid}</td><td>${d.score}</td><td>${d.reasons?.join(', ') || '-'}</td></tr>`
+				}
+				detailsHtml += '</tbody></table>'
+			}
+
+			const tip = document.createElement('div')
+			tip.className = 'poptip ausl-log-poptip'
+			tip.id = tipId
+			tip.innerHTML = `<div class="ausl-log-wrap"><div class="ausl-log-title">Group ${gid}</div><div class="ausl-log-reason">${log.reason}</div>${detailsHtml}</div>`
+			hr.appendChild(tip)
 		})
 
-		console.log(`[ausl] Inserted ${divs.length} log button(s)`)
+		console.log(`[ausl] Inserted ${divs.length} log tag(s)`)
 	})
-}
-
-function showAutoSelectLogModal(gid){
-	const log = window.auslLogs?.[gid]
-	if (!log) return
-
-	let existing = document.getElementById('ausl-log-modal')
-	if (existing) existing.remove()
-
-	let detailsHtml = ''
-	if (log.details?.length) {
-		detailsHtml = '<table class="ausl-log-table"><thead><tr><th>#ID</th><th>Score</th><th>Reasons</th></tr></thead><tbody>'
-		for (const d of log.details){
-			const isWinner = log.selectedAids?.includes(d.aid)
-			detailsHtml += `<tr class="${isWinner ? 'winner' : ''}"><td>#${d.aid}</td><td>${d.score}</td><td>${d.reasons?.join(', ') || '-'}</td></tr>`
-		}
-		detailsHtml += '</tbody></table>'
-	}
-
-	const modal = document.createElement('div')
-	modal.id = 'ausl-log-modal'
-	modal.className = 'ausl-log-modal'
-	modal.innerHTML = `
-		<div class="ausl-log-content">
-			<div class="ausl-log-header">
-				<span>Group ${gid} - Auto Selection Log</span>
-				<button class="ausl-log-close" onclick="document.getElementById('ausl-log-modal').remove()">×</button>
-			</div>
-			<div class="ausl-log-body">
-				<div class="ausl-log-reason">${log.reason}</div>
-				${detailsHtml}
-			</div>
-		</div>
-	`
-	modal.onclick = (e) =>{if (e.target === modal) modal.remove()}
-	document.body.appendChild(modal)
 }
 
 //========================================================================

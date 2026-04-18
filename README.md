@@ -187,7 +187,7 @@ When deleting duplicates, Metadata Merge can transfer metadata from deleted phot
 Automatically select the best photo in each duplicate group based on configurable criteria.
 
 <p align="center">
-<img src="docs/ausl.png" alt="Auto Selection showing selection reason tooltip" />
+<img src="docs/ausl.jpg" alt="Auto Selection showing selection reason tooltip" />
 </p>
 
 - Each criterion has a weight (0-5). Score = weight × 10

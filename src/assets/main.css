@@ -688,7 +688,7 @@ body.show-grid-info .card.sim .grid.grid-info { display: grid; }
 
 .poptip { display: none; z-index: 20; }
 
-.poptip > div { padding: 8px 12px; border-radius: 8px; background: #333333cc; box-shadow: 0 0 5px #fff; white-space: nowrap; min-width: fit-content; }
+.poptip > div { padding: 8px 12px; border-radius: 8px; background: #333333dd; box-shadow: 0 0 5px #fff; min-width: fit-content; max-width: 80vw; }
 
 .poptip .desc-content { max-width: 300px; white-space: pre-wrap; word-break: break-word; margin: 0; }
 

@@ -1039,10 +1039,10 @@
 	> div {
 		padding: 8px 12px;
 		border-radius: 8px;
-		background: #333333cc;
+		background: #333333dd;
 		box-shadow: 0 0 5px #fff;
-		white-space: nowrap;
 		min-width: fit-content;
+		max-width: 80vw;
 	}
 
 	.desc-content {

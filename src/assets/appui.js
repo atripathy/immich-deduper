@@ -62,12 +62,6 @@ const ui = window.ui = {
 		// white-space: nowrap and min-width: fit-content may not be fully applied yet,
 		// causing getBoundingClientRect() to return incorrect dimensions on first call
 		Element.prototype.refreshSize = function(){
-			const innerDiv = this.querySelector('div')
-			if (innerDiv) {
-				innerDiv.style.width = 'auto'
-				innerDiv.style.whiteSpace = 'nowrap'
-			}
-
 			this.style.visibility = 'hidden'
 			this.style.position = 'absolute'
 			this.style.left = '0'
